@@ -1,0 +1,12 @@
+﻿# Ignore large data and model files
+datasets/
+pretrained_models/
+
+# PyTorch model files
+*.pt
+*.pth
+
+# (Optional) medical image data formats
+# *.nii
+# *.nii.gz
+# *.gz
