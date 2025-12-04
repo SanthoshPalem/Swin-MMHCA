@@ -6,7 +6,7 @@ import numpy as np
 from PIL import Image
 
 class MultiModalSuperResDataset(data.Dataset):
-    def __init__(self, dataset_root, modalities=['T1', 'T2', 'PD'], scale_factor=4, transform=None, train=True, shuffle=True):
+    def __init__(self, dataset_root, modalities=['T1', 'T2', 'PD'], scale_factor=4, transform=None, split='train', shuffle=True):
         super(MultiModalSuperResDataset, self).__init__()
         
         self.dataset_root = dataset_root
@@ -18,13 +18,18 @@ class MultiModalSuperResDataset(data.Dataset):
         if shuffle:
             np.random.shuffle(all_samples)
             
-        num_samples = len(all_samples)
-        split_idx = int(num_samples * 0.8)
+        # Per the paper: 500 train, 6 validation, 70 test
+        train_end = 500
+        val_end = 500 + 6
         
-        if train:
-            self.samples = all_samples[:split_idx]
+        if split == 'train':
+            self.samples = all_samples[:train_end]
+        elif split == 'validation':
+            self.samples = all_samples[train_end:val_end]
+        elif split == 'test':
+            self.samples = all_samples[val_end:val_end + 70]
         else:
-            self.samples = all_samples[split_idx:]
+            raise ValueError(f"Invalid split '{split}'. Choose from 'train', 'validation', 'test'.")
 
     def _scan_dataset(self):
         samples = []
@@ -83,9 +88,12 @@ class MultiModalSuperResDataset(data.Dataset):
             slice_data = (slice_data * 255).astype(np.uint8)
             img_pil = Image.fromarray(slice_data).convert('L') # Grayscale
             
-            # Generate LR image
+            # Generate LR image & HR image and resize
             width, height = img_pil.size
             lr_img_pil = img_pil.resize((width // self.scale_factor, height // self.scale_factor), Image.BICUBIC)
+            
+            # Resize for the model
+            lr_img_pil = lr_img_pil.resize((64, 64), Image.BICUBIC)
             
             if self.transform:
                 lr_img = self.transform(lr_img_pil)
@@ -93,10 +101,12 @@ class MultiModalSuperResDataset(data.Dataset):
             lr_images.append(lr_img)
 
             if mod == target_modality:
+                # Resize HR image for the model output
+                hr_img_pil = img_pil.resize((256, 256), Image.BICUBIC)
                 if self.transform:
-                    hr_image = self.transform(img_pil)
+                    hr_image = self.transform(hr_img_pil)
                 else:
-                    hr_image = img_pil
+                    hr_image = hr_img_pil
         
         return lr_images, hr_image
 

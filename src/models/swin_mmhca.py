@@ -69,8 +69,9 @@ class SwinMMHCA(nn.Module):
 
         decoder_layers = []
         n_feats_dec = 192
-        # To go from 8x8 to 256x256, we need to upscale by 32 = 2^5
-        for i in range(5):
+        # Dynamically create decoder based on scale factor
+        num_upsample_blocks = int(math.log2(8 * scale))
+        for i in range(num_upsample_blocks):
             decoder_layers.append(UpsampleBlock(n_feats_dec, n_feats_dec))
         decoder_layers.append(default_conv(n_feats_dec, 1, 3))
         self.cnn_decoder = nn.Sequential(*decoder_layers)

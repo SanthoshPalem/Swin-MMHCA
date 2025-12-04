@@ -34,7 +34,7 @@ def train(args):
         modalities=modalities,
         scale_factor=args.scale_factor,
         transform=ToTensor(),
-        train=True
+        split='train'
     )
     dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
 
@@ -95,7 +95,8 @@ def evaluate(args):
         modalities=modalities,
         scale_factor=args.scale_factor,
         transform=ToTensor(),
-        train=False
+        split='test',
+        shuffle=False
     )
     val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers)
 
@@ -245,7 +246,7 @@ def visualize(args):
                 modalities=['T1', 'T2', 'PD'],
                 scale_factor=args.scale_factor,
                 transform=ToTensor(),
-                train=False,
+                split='test',
                 shuffle=False
             )
             val_dataloader = DataLoader(val_dataset, batch_size=1, shuffle=False)
